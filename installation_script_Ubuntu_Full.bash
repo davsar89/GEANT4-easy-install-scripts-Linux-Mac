@@ -26,15 +26,13 @@ casmesh_url=("https://github.com/christopherpoole/CADMesh/archive/v$casmesh_w_ve
 ####################################################
 
 # CMake command
-CMake_path=cmake
+CMake_path=../../cmake/bin/cmake
 
 #
 current_dir=$PWD
 
 # Parameters
 core_nb=`grep -c ^processor /proc/cpuinfo`
-
-CMake_path=cmake
 
 base_dir=$PWD
 
@@ -252,6 +250,7 @@ $CMake_path \
       -DCMAKE_INSTALL_PREFIX=${casmesh_install_dir} \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_LIBDIR=lib \
+      -DGeant4_DIR=$geant4_lib_dir \
       $casmesh_src
 
 echo "... done"
