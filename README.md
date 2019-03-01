@@ -1,12 +1,12 @@
-##Set of bash script to easily download, compile and install Geant4 on Linux OS.
+## Set of bash script to easily download, compile and install Geant4 on a Linux OS with bash.
 - Use `bash script_name.bash` to execute
 - See http://geant4.web.cern.ch/ and the [Geant4 installation instructions](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/InstallationGuide/html/index.html) for more information
 
-###`installation_script_linux_no_GUI.bash` :
+### `installation_script_linux_no_GUI.bash` :
 - Downloads/compiles/installs on a Linux OS with *bash*, **without** GUI and 3D graphics capability.
 - The user have a *C/C++ compiler* and *CMake* accessible in the `$PATH`
 
-###`installation_script_Ubuntu_Full.bash` :
+### `installation_script_Ubuntu_Full.bash` :
 - Downloads/compiles/installs on a Ubuntu OS, with full capability, including GUI and 3D graphics
 - It was successfully tested on Ubuntu 16.04 and 18.04, but is probably not free of bugs.
 - Will require super user priviledges (`sudo`) to download missing dependencies. 
