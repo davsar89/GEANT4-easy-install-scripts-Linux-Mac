@@ -42,7 +42,6 @@ base_dir=$PWD
 src_dir=$base_dir/source_geant4.${_g4_version}/
 build_dir=$base_dir/geant4_build_${_g4_version}/
 install_dir=$base_dir/geant4_install_${_g4_version}/
-data_dir=$base_dir/data_${_g4_version}/
 geant4_lib_dir=${install_dir}/lib/${folder_g4_version}/
 
 # XERCES-C
@@ -61,7 +60,6 @@ casmesh_install_dir=($base_dir/install_cadmesh/)
 
   mkdir -p ${build_dir} # -p will create only if it does not exist yet
   mkdir -p ${src_dir}
-  mkdir -p ${data_dir}
   mkdir -p ${install_dir}
 
   mkdir -p $casmesh_build_dir
