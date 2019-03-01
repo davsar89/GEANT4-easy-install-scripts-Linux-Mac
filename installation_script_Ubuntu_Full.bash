@@ -271,11 +271,11 @@ echo "... done"
 
 echo "Attempt to setup up environement variables..."
 
-set_environement() {
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
+
+set_environement() {
 
 cd $base_dir
 
@@ -310,8 +310,8 @@ set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$xercesc_install_dir/
 set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$xercesc_install_dir/lib64/"
 set_environement "export PATH=\$PATH:$xercesc_install_dir/include/"
 
-
 echo "... Done"
+echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
 
 
 
