@@ -95,6 +95,7 @@ $CMake_path \
       -DCMAKE_INSTALL_LIBDIR=lib \
       -DMAT73=OFF \
       -DDEFAULT_FILE_VERSION=5 \
+      -DLINUX=ON \
       ../$matio_folder/
 echo "... done"
 
