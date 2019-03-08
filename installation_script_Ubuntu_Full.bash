@@ -23,6 +23,10 @@ xerces_url=("http://archive.apache.org/dist/xerces/c/3/sources/$xerces_arc")
 casmesh_w_ver=1.1
 casmesh_arc=v${casmesh_w_ver}.tar.gz
 casmesh_url=("https://github.com/christopherpoole/CADMesh/archive/v$casmesh_w_ver.tar.gz")
+
+matio_folder=matio-cmake
+matio_git_repo=https://github.com/massich/$matio_folder.git
+
 ####################################################
 
 # CMake command
@@ -54,6 +58,11 @@ xercesc_lib_dir=(${xercesc_install_dir}/lib64/libxerces-c-3.2.so)
 casmesh_build_dir=($base_dir/build_cadmesh/)
 casmesh_install_dir=($base_dir/install_cadmesh/)
 
+# MATIO
+
+matio_build_dir=($base_dir/build_matio/)
+matio_install_dir=($base_dir/install_matio/)
+
 ########## Creating folders
 
   mkdir -p ${build_dir} # -p will create only if it does not exist yet
@@ -65,6 +74,9 @@ casmesh_install_dir=($base_dir/install_cadmesh/)
 
   mkdir -p $xercesc_build_dir
   mkdir -p $xercesc_install_dir
+
+  mkdir -p $matio_build_dir
+  mkdir -p $matio_install_dir
 
 ############# CHECK IF OS IS UBUNTU
 echo "checking if OS is Ubuntu..."
@@ -102,6 +114,7 @@ ubuntu_dependences_list=( "build-essential"
 "libboost-filesystem-dev" 
 "libeigen3-dev" 
 "qt4-qmake"
+"libhdf5-serial-dev"
 )
 
 entered_one_time=true
@@ -142,6 +155,34 @@ echo "... dependencies are satisfied."
 
 #########################################################################
 
+#### MATIO (to be able to write matlab output files)
+
+rm -rf $matio_folder
+git clone --recursive https://github.com/massich/matio-cmake.git
+
+cd $matio_build_dir
+
+echo "build of matio: Attempt to execute CMake..."
+
+rm -rf CMakeCache.txt
+
+$CMake_path \
+      -DCMAKE_INSTALL_PREFIX=${matio_install_dir} \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_LIBDIR=lib \
+      -DMAT73=ON \
+      -DDEFAULT_FILE_VERSION=7.3 \
+      -DLINUX=ON \
+      ../$matio_folder/
+echo "... done"
+
+echo "Attempt to compile and install matio"
+
+  G4VERBOSE=1 make -j${core_nb}
+  make install
+
+cd $base_dir
+echo "... done"
 
 #### XERCES-C (to be able to use GDML files)
 
@@ -309,6 +350,13 @@ set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:$xercesc_instal
 set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$xercesc_install_dir/lib64/"
 set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$xercesc_install_dir/lib64/"
 set_environement "export PATH=\$PATH:$xercesc_install_dir/include/"
+
+# matio
+set_environement "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:$matio_install_dir/include/"
+set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:$matio_install_dir/include/"
+set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$matio_install_dir/lib/"
+set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$matio_install_dir/lib/"
+set_environement "export PATH=\$PATH:$matio_install_dir/include/"
 
 echo "... Done"
 echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
