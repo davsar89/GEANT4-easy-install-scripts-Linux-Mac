@@ -27,6 +27,11 @@ casmesh_url=("https://github.com/christopherpoole/CADMesh/archive/v$casmesh_w_ve
 matio_folder=matio-cmake
 matio_git_repo=https://github.com/massich/$matio_folder.git
 
+hdf5_version=1_10_5
+hdf5_ar_name=hdf5-$hdf5_version.tar.gz
+hdf5_basename=hdf5-hdf5-$hdf5_version
+hdf5_url=https://github.com/live-clones/hdf5/archive/$hdf5_ar_name
+
 ####################################################
 
 # CMake command
@@ -63,6 +68,11 @@ casmesh_install_dir=($base_dir/install_cadmesh/)
 matio_build_dir=($base_dir/build_matio/)
 matio_install_dir=($base_dir/install_matio/)
 
+# HDF5
+
+hdf5_build_dir=($base_dir/build_hdf5/)
+hdf5_install_dir=($base_dir/install_hdf5/)
+
 ########## Creating folders
 
   mkdir -p ${build_dir} # -p will create only if it does not exist yet
@@ -77,6 +87,9 @@ matio_install_dir=($base_dir/install_matio/)
 
   mkdir -p $matio_build_dir
   mkdir -p $matio_install_dir
+
+  mkdir -p $hdf5_build_dir
+  mkdir -p $hdf5_install_dir
 
 ############# CHECK IF OS IS UBUNTU
 echo "checking if OS is Ubuntu..."
@@ -114,7 +127,7 @@ ubuntu_dependences_list=( "build-essential"
 "libboost-filesystem-dev" 
 "libeigen3-dev" 
 "qt4-qmake"
-"libhdf5-serial-dev"
+#"libhdf5-serial-dev"
 )
 
 entered_one_time=true
@@ -155,6 +168,32 @@ echo "... dependencies are satisfied."
 
 #########################################################################
 
+#### HDF5 (requirement of MATIO)
+
+rm -rf $hdf5_ar_name
+wget $hdf5_url
+tar zxf $hdf5_ar_name
+
+cd $hdf5_build_dir
+echo "build of hdf5: Attempt to execute CMake..."
+
+rm -rf CMakeCache.txt
+
+$CMake_path \
+      -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir} \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_LIBDIR=lib \
+      ../$hdf5_basename/
+echo "... done"
+
+echo "Attempt to compile and install hdf5"
+
+  G4VERBOSE=1 make -j${core_nb}
+  make install
+
+cd $base_dir
+echo "... done"
+
 #### MATIO (to be able to write matlab output files)
 
 rm -rf $matio_folder
@@ -166,6 +205,9 @@ echo "build of matio: Attempt to execute CMake..."
 
 rm -rf CMakeCache.txt
 
+hdf5_cmake_dir=${hdf5_install_dir}/share/cmake/hdf5
+hdf5_diff_exe=${hdf5_install_dir}/bin/h5diff
+
 $CMake_path \
       -DCMAKE_INSTALL_PREFIX=${matio_install_dir} \
       -DCMAKE_BUILD_TYPE=Release \
@@ -173,6 +215,8 @@ $CMake_path \
       -DMAT73=ON \
       -DDEFAULT_FILE_VERSION=7.3 \
       -DLINUX=ON \
+      -DHDF5_DIR=$hdf5_cmake_dir \
+      -DHDF5_DIFF_EXECUTABLE=$hdf5_diff_exe \
       ../$matio_folder/
 echo "... done"
 
@@ -357,6 +401,13 @@ set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:$matio_install_
 set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$matio_install_dir/lib/"
 set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$matio_install_dir/lib/"
 set_environement "export PATH=\$PATH:$matio_install_dir/include/"
+
+# hdf5
+set_environement "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:$hdf5_install_dir/include/"
+set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:$hdf5_install_dir/include/"
+set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$hdf5_install_dir/lib/"
+set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$hdf5_install_dir/lib/"
+set_environement "export PATH=\$PATH:$hdf5_install_dir/include/"
 
 echo "... Done"
 echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
