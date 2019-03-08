@@ -24,17 +24,17 @@ casmesh_w_ver=1.1
 casmesh_arc=v${casmesh_w_ver}.tar.gz
 casmesh_url=("https://github.com/christopherpoole/CADMesh/archive/v$casmesh_w_ver.tar.gz")
 
-matio_folder=matio-cmake
 matio_git_repo=https://github.com/massich/$matio_folder.git
 
-<<<<<<< HEAD
-=======
-hdf5_version=1_10_5
-hdf5_ar_name=hdf5-$hdf5_version.tar.gz
-hdf5_basename=hdf5-hdf5-$hdf5_version
-hdf5_url=https://github.com/live-clones/hdf5/archive/$hdf5_ar_name
+hdf5_version=1.8.21 # MATIO does not work properly with more recent versions
+hdf5_ar_name=hdf5-1.8.21.tar.gz
+hdf5_basename=hdf5-1.8.21
+hdf5_url=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.21/src/$hdf5_ar_name
 
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
+zlib_src=zlib-1.2.11
+zlib_ar_name=$zlib_src.tar.gz
+zlib_url=https://www.zlib.net/$zlib_ar_name
+
 ####################################################
 
 # CMake command
@@ -70,15 +70,19 @@ casmesh_install_dir=($base_dir/install_cadmesh/)
 
 matio_build_dir=($base_dir/build_matio/)
 matio_install_dir=($base_dir/install_matio/)
+matio_name_ver=matio-1.5.13
+matio_folder_name=($base_dir/$matio_name_ver/)
 
-<<<<<<< HEAD
-=======
 # HDF5
 
 hdf5_build_dir=($base_dir/build_hdf5/)
 hdf5_install_dir=($base_dir/install_hdf5/)
 
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
+# ZLIB
+
+zlib_build_dir=($base_dir/build_zlib/)
+zlib_install_dir=($base_dir/install_zlib/)
+
 ########## Creating folders
 
   mkdir -p ${build_dir} # -p will create only if it does not exist yet
@@ -94,12 +98,12 @@ hdf5_install_dir=($base_dir/install_hdf5/)
   mkdir -p $matio_build_dir
   mkdir -p $matio_install_dir
 
-<<<<<<< HEAD
-=======
   mkdir -p $hdf5_build_dir
   mkdir -p $hdf5_install_dir
 
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
+  mkdir -p $zlib_build_dir
+  mkdir -p $zlib_install_dir
+
 ############# CHECK IF OS IS UBUNTU
 echo "checking if OS is Ubuntu..."
 # Checking if OS is Ubuntu
@@ -136,11 +140,7 @@ ubuntu_dependences_list=( "build-essential"
 "libboost-filesystem-dev" 
 "libeigen3-dev" 
 "qt4-qmake"
-<<<<<<< HEAD
-"libhdf5-serial-dev"
-=======
 #"libhdf5-serial-dev"
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
 )
 
 entered_one_time=true
@@ -181,71 +181,74 @@ echo "... dependencies are satisfied."
 
 #########################################################################
 
-<<<<<<< HEAD
-=======
+#### ZLIB
+
+echo "Attempt to download, compile and install ZLIB..."
+rm -rf $zlib_ar_name
+wget -N $zlib_url
+tar zxf $zlib_ar_name
+cd $zlib_src
+CC=gcc CXX=g++ ./configure --prefix=$zlib_install_dir \
+                           --eprefix=$zlib_install_dir
+make
+make install
+echo "... done"
+
 #### HDF5 (requirement of MATIO)
 
+echo "Attempt to download HDF5 source..."
+
 rm -rf $hdf5_ar_name
-wget $hdf5_url
+wget -N $hdf5_url
 tar zxf $hdf5_ar_name
 
-cd $hdf5_build_dir
-echo "build of hdf5: Attempt to execute CMake..."
+cd $hdf5_basename
 
-rm -rf CMakeCache.txt
+echo "... done"
 
-$CMake_path \
-      -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir} \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_LIBDIR=lib \
-      ../$hdf5_basename/
+echo "Attempt to configure Autotools of HDF5..."
+CC=gcc CXX=g++ ./configure --prefix=$hdf5_install_dir \
+                           --exec-prefix=$hdf5_install_dir \
+                           --with-zlib=$zlib_install_dir
+
 echo "... done"
 
 echo "Attempt to compile and install hdf5"
 
-  G4VERBOSE=1 make -j${core_nb}
-  make install
+make
+make install
 
 cd $base_dir
 echo "... done"
 
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
 #### MATIO (to be able to write matlab output files)
 
-rm -rf $matio_folder
-git clone --recursive https://github.com/massich/matio-cmake.git
+rm -rf $matio_name_ver.tar.gz*
+rm -rf $matio_folder_name
 
-cd $matio_build_dir
+wget -N https://github.com/tbeu/matio/releases/download/v1.5.13/$matio_name_ver.tar.gz
 
-echo "build of matio: Attempt to execute CMake..."
+tar zxf matio-1.5.13.tar.gz
 
-rm -rf CMakeCache.txt
+cd $matio_folder_name
 
-<<<<<<< HEAD
-=======
-hdf5_cmake_dir=${hdf5_install_dir}/share/cmake/hdf5
-hdf5_diff_exe=${hdf5_install_dir}/bin/h5diff
+echo "build of matio: Attempt to execute Autotools..."
 
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
-$CMake_path \
-      -DCMAKE_INSTALL_PREFIX=${matio_install_dir} \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_LIBDIR=lib \
-<<<<<<< HEAD
-=======
-      -DMAT73=ON \
-      -DDEFAULT_FILE_VERSION=7.3 \
-      -DLINUX=ON \
-      -DHDF5_DIR=$hdf5_cmake_dir \
-      -DHDF5_DIFF_EXECUTABLE=$hdf5_diff_exe \
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
-      ../$matio_folder/
+./autogen.sh
+
+CC=gcc CXX=g++ ./configure --with-default-file-ve=7.3 \
+                           --with-hdf5=${hdf5_install_dir} \
+                           --prefix=$matio_install_dir \
+                           --with-default-api-version=v18 \
+                           --enable-mat73=yes \
+                           --with-zlib=$zlib_install_dir \
+                           --exec-prefix=$matio_install_dir
 echo "... done"
 
 echo "Attempt to compile and install matio"
-
-  G4VERBOSE=1 make -j${core_nb}
-  make install
+make
+make check
+make install
 
 cd $base_dir
 echo "... done"
@@ -254,7 +257,7 @@ echo "... done"
 
 ## download xerces-c (for GDML)
 
-wget $xerces_url
+wget -N $xerces_url
 tar zxf $base_dir/$xerces_arc
 rm -rf $xerces_arc
 
@@ -277,7 +280,7 @@ echo "... done"
 
 echo "Attempt to compile and install xerces-c"
 
-  G4VERBOSE=1 make -j${core_nb}
+  make -j${core_nb}
   make install
 
 cd $base_dir
@@ -288,7 +291,7 @@ echo "... done"
 ## download Geant4
 
 rm -rf ${src_dir}
-wget $g4_url
+wget -N $g4_url
 tar zxf geant4.${_g4_version}.tar.gz
 mv geant4.${_g4_version} ${src_dir}
 rm -rf geant4.${_g4_version}.tar.gz
@@ -339,7 +342,7 @@ echo "... Done"
 
 ## download CADMESH
 
-wget $casmesh_url
+wget -N $casmesh_url
 tar zxf $base_dir/$casmesh_arc
 rm -rf $casmesh_arc
 
@@ -364,7 +367,7 @@ echo "... done"
 
 echo "Attempt to compile and install CADMESH"
 
-  G4VERBOSE=1 make -j${core_nb}
+  make -j${core_nb}
   make install
 
 cd $base_dir
@@ -424,8 +427,6 @@ set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$matio_install_dir/li
 set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$matio_install_dir/lib/"
 set_environement "export PATH=\$PATH:$matio_install_dir/include/"
 
-<<<<<<< HEAD
-=======
 # hdf5
 set_environement "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:$hdf5_install_dir/include/"
 set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:$hdf5_install_dir/include/"
@@ -433,7 +434,6 @@ set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$hdf5_install_dir/lib
 set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:$hdf5_install_dir/lib/"
 set_environement "export PATH=\$PATH:$hdf5_install_dir/include/"
 
->>>>>>> 3f7b94b929644aa0466ecde7c4a33dd0586c5a7a
 echo "... Done"
 echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
 
