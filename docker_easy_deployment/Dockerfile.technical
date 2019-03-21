@@ -1,0 +1,15 @@
+FROM ubuntu:bionic
+
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN apt-get install python -y
+RUN apt-get install python3-pip -y
+RUN apt-get install python-pip -y
+RUN pip install numpy
+RUN pip3 install numpy
+RUN apt-get install git curl wget build-essential uuid-runtime uuid-dev libuuid1 qt4-qmake libeigen3-dev libboost-filesystem-dev libmotif-dev libxmu-dev libexpat1-dev qt4-default qtcreator cmake-qt-gui gcc g++ gfortran zlib1g-dev libxerces-c-dev libx11-dev -y
+COPY ./interface/installation_script_Ubuntu_Full_geant4_multithreaded_10.7.bash /installation_script_Ubuntu_Full_geant4_multithreaded_10.7.bash
+RUN bash installation_script_Ubuntu_Full_geant4_multithreaded_10.7.bash
+COPY ./interface/installation_script_linux_only_CADmesh.bash /installation_script_linux_only_CADmesh.bash
+RUN bash installation_script_linux_only_CADmesh.bash
+
