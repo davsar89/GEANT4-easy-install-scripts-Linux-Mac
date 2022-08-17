@@ -10,13 +10,14 @@ source /geant4/geant4_install_10.07.p03/bin/geant4.sh || true
 git config --global http.sslverify "false" || true
 ########################## VARIABLES
 
+
 ##############  PROGRAMS' VERSIONS AND URLs : MAY CHANGE IN THE FUTURE
 
 cmake_download_url=https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz
 
 casmesh_w_ver=1.1
 casmesh_arc=v${casmesh_w_ver}.tar.gz
-casmesh_url=https://github.com/davsar89/CADMesh.git
+casmesh_url=("https://github.com/DavidSarria89/CADMesh/releases/download/v1.1mod/v1.1.tar.gz")
 
 ####################################################
 
@@ -57,10 +58,11 @@ mkdir -p $casmesh_install_dir
 
 ## download CADMESH
 
-rm -rf CADMesh
+wget $casmesh_url
+tar zxf $base_dir/$casmesh_arc
+rm -rf $casmesh_arc
 
-git clone $casmesh_url
-casmesh_src=$base_dir/CADMesh
+casmesh_src=$base_dir/CADMesh-master
 
 ## compile and install CADMESH
 
@@ -142,6 +144,4 @@ echo "## <-- Added by CADmesh installation script" >> ~/.bashrc
 
 echo "... Done"
 echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
-
-
 
