@@ -86,7 +86,7 @@ fi
 ############# CHECK IF DEPENDENCIES ARE SATISFIED, OTHERWISE INSTALL THEM
 
 ubuntu_dependences_list=( "build-essential"
-    "qt4-default"
+    "qt5-default"
     "qtcreator"
     "cmake-qt-gui"
     "gcc"
@@ -284,5 +284,4 @@ echo " " >> ~/.bashrc
 echo "## <-- Added by Geant4 installation script" >> ~/.bashrc
 echo "... Done"
 echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
-
 
