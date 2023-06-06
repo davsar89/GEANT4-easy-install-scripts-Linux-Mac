@@ -11,10 +11,10 @@
 - Downloads/compiles/installs on a *Linux based OS* with *bash*, **without** GUI and 3D graphics capability. Can be used in computer clusters (HPC) for heavy calculations for example.
 
 ### `installation_script_Ubuntu_18_04_FullGeant4_10_6.bash` :
-- Does like the previous script, but for a Linux *Ubuntu OS*, and will also **build and install the GUI (Qt) and 3D graphics capabilities of Geant4**
-- It was successfully tested on Ubuntu 16.04 and 18.04, but is probably not free of bugs
-- Will require super user priviledges (`sudo`) to download missing dependencies
-- alternatively, run command `sudo apt-get install build-essential qt4-default qtcreator cmake-qt-gui gcc g++ gfortran zlib1g-dev libxerces-c-dev libx11-dev libexpat1-dev libxmu-dev libmotif-dev libboost-filesystem-dev libeigen3-dev qt4-qmake automake libuuid1 uuid-dev uuid-runtime` to install dependencies before-hand, and `sudo` should not be required
+- Does like the previous script, but for a Linux *Ubuntu OS*, and will also **build and install the GUI (Qt) and 3D graphics capabilities of Geant4**.
+- It was successfully tested on Ubuntu 16.04 and 18.04, but is probably not free of bugs.
+- Will require super user priviledges (`sudo`) to download missing dependencies.
+- alternatively, run command `sudo apt-get install build-essential qt4-default qtcreator cmake-qt-gui gcc g++ gfortran zlib1g-dev libxerces-c-dev libx11-dev libexpat1-dev libxmu-dev libmotif-dev libboost-filesystem-dev libeigen3-dev qt4-qmake automake libuuid1 uuid-dev uuid-runtime` to install dependencies before-hand, and `sudo` should not be required.
 
 ### `***_FullGeant4_10_X_***.bash` :
 * Script for a specific version of Geant4 10.X .
