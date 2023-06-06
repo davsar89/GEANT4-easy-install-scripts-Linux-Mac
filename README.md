@@ -1,6 +1,5 @@
 ## Set of bash scripts to easily download, compile and install Geant4 on a *Linux OS* or *Mac OS* using *Bash*.
-- Set up for version Geant4 10.4.3, but can be easily changed in the file. See other scripts available.
-- Also downloads/compiles/installs CADMesh. See https://github.com/christopherpoole/CADMesh.
+- Set up for version Geant4 10.7, but can be easily changed in the file. See other scripts available.
 - Use `bash script_name.bash` to execute
 - The user must have the *GNU C and C++ compilers* (gcc and g++) accessible in the `$PATH`
 - See http://geant4.web.cern.ch/ and the [Geant4 installation instructions](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/InstallationGuide/html/index.html) for more information on what the scripts should be doing
@@ -25,12 +24,15 @@
   * Probably also Xcode installed.
 * On Geant4 10.4.3 (and possibly other versions), for multithreaded code to compile (i.e. using multi-threading include files), the user should remove (or comment out) the include `#include <unistd.h>` in the source file `./geant4/geant4_install_10.04.p03/include/Geant4/G4Threading.hh` (line 48).
 
-### `installation_script_Ubuntu_Full_geant4_10-3.bash` :
-* Same as `installation_script_Ubuntu_Full.bash`, but for Geant4 10.3.3.
+### `installation_script_Ubuntu_Full_geant4_10-X.bash` :
+* Same as `installation_script_Ubuntu_Full.bash`, but for Geant4 10.X.X.
 
 ### `installation_script_Ubuntu_Full_geant4_multithreaded.bash` :
 * Same as `installation_script_Ubuntu_Full_geant4_multithreaded.bash` but with multi-threading enabled (i.e. `-DGEANT4_BUILD_MULTITHREADED=ON`)
 
-### `installation_script_linux_only_matio_hdf5_zlib` :
+### `installation_script_linux_only_matio_hdf5_zlib.bash` :
 * Downloads/compiles/installs only zlib, hdf5 and matio  libraries. That permits to output matlab .mat files. More info about matio: https://github.com/tbeu/matio .
+
+### `installation_script_linux_only_CADmesh.bash` :
+* Downloads/compiles/installs only the CADmesh libraries to load CAD 3D models geometry (`.stp`) into Geant4. See https://github.com/christopherpoole/CADMesh.
 
