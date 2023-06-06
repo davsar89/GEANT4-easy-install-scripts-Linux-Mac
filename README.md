@@ -7,7 +7,7 @@
 - See http://geant4.web.cern.ch/ and the [Geant4 installation instructions](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/InstallationGuide/html/index.html) for more information on what the scripts should be doing.
 - For *Windows*, you can check this unofficial installer: https://zenodo.org/record/3571237 (Geant4 10.4, uses Visual Studio and was tested to work on Windows 10).
 
-### `installation_script_linux_noGUI_Geant4_10_7_multithreaded.bash` :
+### `installation_script_linuxNoGUI_Geant4_10_7_multithreaded.bash` :
 - Downloads/compiles/installs on a *Linux based OS* with *bash*, **without** GUI and 3D graphics capability. Can be used in computer clusters (HPC) for heavy calculations for example.
 
 ### `installation_script_Ubuntu_18_04_FullGeant4_10_6.bash` :
