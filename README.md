@@ -1,5 +1,6 @@
 ## Set of bash scripts to easily download, compile and install Geant4 on a *Linux OS* or *Mac OS* using *Bash*.
 ### `installation_script_Ubuntu_18_04_FullGeant4_10_6.bash` :
+- For Ubuntu 18.04 and *includes the window GUI (Qt) and 3D graphics capabilities of Geant4*
 - Set up for version Geant4 10.6 without multithreading activated, the version should be fairly easily changable by editing the bash file. See also the other scripts available.
 - Use `bash script_name.bash` to execute (it is important to use `bash` and not `sh` only)
 - The user must have the *GNU C and C++ compilers* (gcc and g++) accessible in the `$PATH`. E.g. with `sudo apt-get install gcc g++ gfortran` .
