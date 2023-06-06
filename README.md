@@ -37,7 +37,7 @@
 - On Geant4 10.4.3 (and possibly other versions), for multithreaded code to compile (i.e. using multi-threading include files), the user should remove (or comment out) the include `#include <unistd.h>` in the source file `./geant4/geant4_install_10.04.p03/include/Geant4/G4Threading.hh` (line 48).
 
 ### `installation_script_linux_only_matio_hdf5_zlib.bash` :
-* Downloads/compiles/installs only `zlib`, `hdf5` and `matio` libraries. That permits to output directly to Matlab .mat files. More info about matio: https://github.com/tbeu/matio .
+* Downloads/compiles/installs only `zlib`, `hdf5` and `matio` libraries. That permits to output directly to Matlab `.mat` files. More info about matio: https://github.com/tbeu/matio .
 
 ### `installation_script_linux_only_CADmesh.bash` :
 * Downloads/compiles/installs only the `CADmesh` libraries to easily load CAD 3D models geometry (`.stp`) into Geant4. See https://github.com/christopherpoole/CADMesh.
