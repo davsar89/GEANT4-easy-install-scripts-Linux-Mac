@@ -2,7 +2,7 @@
 ### `installation_script_Ubuntu_18_04_FullGeant4_10_6.bash` :
 - Set up for version Geant4 10.6 without multithreading activated, the version should be fairly easily changable by editing the bash file. See also the other scripts available.
 - Use `bash script_name.bash` to execute (it is important to use `bash` and not `sh` only)
-- The user must have the *GNU C and C++ compilers* (gcc and g++) accessible in the `$PATH`
+- The user must have the *GNU C and C++ compilers* (gcc and g++) accessible in the `$PATH`. E.g. with `sudo apt-get install gcc g++ gfortran` .
 - See http://geant4.web.cern.ch/ and the [Geant4 installation instructions](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/InstallationGuide/html/index.html) for more information on what the scripts should be doing.
 - For *Windows*, you can check this unofficial installer: https://zenodo.org/record/3571237 (Geant4 10.4, uses Visual Studio and was tested to work on Windows 10).
 
