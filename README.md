@@ -16,11 +16,11 @@
 - Will require super user priviledges (`sudo`) to download missing dependencies
 - alternatively, run command `sudo apt-get install build-essential qt4-default qtcreator cmake-qt-gui gcc g++ gfortran zlib1g-dev libxerces-c-dev libx11-dev libexpat1-dev libxmu-dev libmotif-dev libboost-filesystem-dev libeigen3-dev qt4-qmake automake libuuid1 uuid-dev uuid-runtime` to install dependencies before-hand, and `sudo` should not be required
 
-### `***_FullGeant4_10_X.bash` :
+### `***_FullGeant4_10_X_***.bash` :
 * Script for a specific version of Geant4 10.X .
 
 ### `***_Ubuntu_XX_XX_***.bash` :
-* Script for a specific version of Ubuntu XX-XX .
+* Script for a specific version of Ubuntu XX.XX .
 
 ### `***_multithreaded.bash` :
 * Script with the multi-threading option enabled (i.e. `-DGEANT4_BUILD_MULTITHREADED=ON`). Note: the resulting Geant4 compiled libraries can be also used (imported) for single threaded applications.
