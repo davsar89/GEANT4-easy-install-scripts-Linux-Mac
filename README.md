@@ -3,7 +3,7 @@
 - Use `bash script_name.bash` to execute
 - The user must have the *GNU C and C++ compilers* (gcc and g++) accessible in the `$PATH`
 - See http://geant4.web.cern.ch/ and the [Geant4 installation instructions](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/InstallationGuide/html/index.html) for more information on what the scripts should be doing
-- For Windows, you can check this unofficial installer: https://zenodo.org/record/3571237 (uses Visual Studio)
+- For *Windows*, you can check this unofficial installer: https://zenodo.org/record/3571237 (uses Visual Studio and checked to work on Windows 10)
 
 ### `installation_script_linux_noGUI_10_7_multithreaded.bash` :
 - Downloads/compiles/installs on a *Linux based OS* with *bash*, **without** GUI and 3D graphics capability. Can be used in computer clusters (HPC) for heavy calculations for example.
