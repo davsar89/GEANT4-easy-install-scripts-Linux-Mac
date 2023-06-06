@@ -115,7 +115,7 @@ fi
 
 #
 
-echo "## --> Added by hdf5 zlib matio installation script" >> ~/.bashrc
+echo "## --> Added by CADmesh installation script" >> ~/.bashrc
 
 set_environement() {
     
