@@ -25,6 +25,9 @@
 ### `***_multithreaded.bash` :
 * Script with the multi-threading option enabled (i.e. `-DGEANT4_BUILD_MULTITHREADED=ON`). Note: the resulting Geant4 compiled libraries can be also used (imported) for single threaded applications.
 
+### `***_intel.bash` :
+* Uses the Intel compilers (`icc`, `icpc`) instead of the GNU compilers (`gcc`, `g++`).
+
 ### `installation_script_macOS_Full.bash` :
 * Downloads/compiles/installs on *Mac OS* with *bash*, **with** GUI and 3D graphics capability. After install, CMake with Geant4 environement (i.e. the `-DGeant4_DIR=...` variable is set) can be loaded using `launch_CMake_MAC.bash` .
 * Requires:
