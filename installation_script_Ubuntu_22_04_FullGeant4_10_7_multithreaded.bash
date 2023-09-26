@@ -100,6 +100,7 @@ ubuntu_dependences_list=( "build-essential"
     "libmotif-dev"
     "libboost-filesystem-dev"
     "libeigen3-dev"
+    "qt4-qmake"
     "libuuid1"
     "uuid-dev"
     "uuid-runtime"
@@ -149,7 +150,7 @@ echo "... dependencies are satisfied."
 
 ## download xerces-c (for GDML)
 
-wget $xerces_url
+curl $xerces_url --output $xerces_arc
 tar zxf $base_dir/$xerces_arc
 rm -rf $xerces_arc
 
