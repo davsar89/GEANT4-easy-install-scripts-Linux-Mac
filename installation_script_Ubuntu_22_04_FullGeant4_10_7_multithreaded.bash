@@ -11,14 +11,16 @@ cd geant4
 ##############  PROGRAMS' VERSIONS AND URLs : MAY CHANGE IN THE FUTURE
 g4_version=10.7.p03
 _g4_version=10.07.p03
+__g4_version=10.7.3
 folder_g4_version=Geant4-10.7.3
-g4_url=("http://cern.ch/geant4-data/releases/geant4.${_g4_version}.tar.gz")
+g4_url=("https://github.com/Geant4/geant4/archive/refs/tags/v10.7.3.tar.gz")
+g4_arc=("geant4.${_g4_version}.tar.gz")
 
 cmake_download_url=https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz
 
 xerces_w_ver=xerces-c-3.2.2
 xerces_arc=${xerces_w_ver}.tar.gz
-xerces_url=("http://archive.apache.org/dist/xerces/c/3/sources/$xerces_arc")
+xerces_url=("https://github.com/apache/xerces-c/archive/refs/tags/v3.2.2.tar.gz")
 
 ####################################################
 
@@ -150,7 +152,9 @@ echo "... dependencies are satisfied."
 
 ## download xerces-c (for GDML)
 
-curl $xerces_url --output $xerces_arc
+rm -rf v3.2.2.tar.gz*
+wget $xerces_url
+mv v3.2.2.tar.gz $xerces_arc
 tar zxf $base_dir/$xerces_arc
 rm -rf $xerces_arc
 
@@ -183,10 +187,12 @@ echo "... done"
 
 ## download Geant4
 
+rm -rf v10.7.3.tar.gz*
 rm -rf ${src_dir}
 wget $g4_url
-tar zxf geant4.${_g4_version}.tar.gz
-mv geant4.${_g4_version} ${src_dir}
+mv v10.7.3.tar.gz $g4_arc
+tar zxf $g4_arc
+mv geant4-${__g4_version} ${src_dir}
 rm -rf geant4.${_g4_version}.tar.gz
 
 ## compile and install Geant4
