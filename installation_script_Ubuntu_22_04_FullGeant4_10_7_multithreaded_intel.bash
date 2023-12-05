@@ -122,7 +122,7 @@ run_install()
         fi
     fi
     ## Prompt the user
-    sudo add-apt-repository ppa:rock-core/qt4
+    #sudo add-apt-repository ppa:rock-core/qt4
     read -p "Do you want to install missing dependencies? [Y/n]: " answer
     ## Set the default value if no answer was given
     answer=${answer:Y}
