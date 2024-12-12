@@ -43,8 +43,6 @@ current_dir=$PWD
 # Parameters
 core_nb=`grep -c ^processor /proc/cpuinfo`
 
-
-
 # Geant4
 src_dir=$base_dir/source_geant4.${_g4_version}/
 build_dir=$base_dir/geant4_build_${_g4_version}/
@@ -105,6 +103,9 @@ ubuntu_dependences_list=( "build-essential"
     "libuuid1"
     "uuid-dev"
     "uuid-runtime"
+    "qt6-base-dev"
+    "qt6-3d-dev"
+    "qt3d5-dev"
 )
 
 entered_one_time=true
