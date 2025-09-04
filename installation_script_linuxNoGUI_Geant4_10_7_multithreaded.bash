@@ -1,220 +1,167 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-#################
-mkdir -p geant4 # directory were everything is built and installed
+#####################################
+# Logging helpers
+#####################################
+log() { echo -e "[INFO] $*"; }
+log_warn() { echo -e "[WARN] $*"; }
+log_success() { echo -e "[OK]   $*"; }
+
+#####################################
+# Setup working directory
+#####################################
+mkdir -p geant4
 cd geant4
-#############
 
-########################## VARIABLES
+#####################################
+# Versions & URLs
+#####################################
+G4_VERSION="10.7.p04"
+_G4_VERSION="10.07.p04"
+FOLDER_G4_VERSION="Geant4-10.7.4"
+G4_URL="http://cern.ch/geant4-data/releases/geant4.${_G4_VERSION}.tar.gz"
 
-##############  PROGRAMS' VERSIONS AND URLs : MAY CHANGE IN THE FUTURE
-g4_version=10.7.p03
-_g4_version=10.07.p03
-folder_g4_version=Geant4-10.7.3
-g4_url=("http://cern.ch/geant4-data/releases/geant4.${_g4_version}.tar.gz")
+CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz"
 
-cmake_download_url=https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz
+XERCES_VERSION="3.2.3"
+XERCES_ARCHIVE="xerces-c-${XERCES_VERSION}.tar.gz"
+XERCES_URL="http://archive.apache.org/dist/xerces/c/3/sources/${XERCES_ARCHIVE}"
 
-xerces_w_ver=xerces-c-3.2.3
-xerces_arc=${xerces_w_ver}.tar.gz
-xerces_url=("http://archive.apache.org/dist/xerces/c/3/sources/${xerces_arc}")
+CADMESH_VERSION="1.1"
+CADMESH_ARCHIVE="v${CADMESH_VERSION}.tar.gz"
+CADMESH_URL="https://github.com/DavidSarria89/CADMesh/releases/download/v1.1mod/v1.1.tar.gz"
 
-casmesh_w_ver=1.1
-casmesh_arc=v${casmesh_w_ver}.tar.gz
-casmesh_url=("https://github.com/DavidSarria89/CADMesh/releases/download/v1.1mod/v1.1.tar.gz")
-####################################################
+#####################################
+# Directories
+#####################################
+BASE_DIR="${PWD}"
+CMAKE_PATH="${BASE_DIR}/cmake/bin/cmake"
+CORE_NB=$(grep -c ^processor /proc/cpuinfo)
 
-# getting CMake
-rm -rf cmake
-rm -rf cmake-3.14.3-Linux-x86_64
-rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
-wget ${cmake_download_url}
+SRC_DIR="${BASE_DIR}/source_geant4.${_G4_VERSION}"
+BUILD_DIR="${BASE_DIR}/geant4_build_${_G4_VERSION}"
+INSTALL_DIR="${BASE_DIR}/geant4_install_${_G4_VERSION}"
+GEANT4_LIB_DIR="${INSTALL_DIR}/lib/${FOLDER_G4_VERSION}"
+
+XERCESC_BUILD_DIR="${BASE_DIR}/build_xercesc_g4_${_G4_VERSION}"
+XERCESC_INSTALL_DIR="${BASE_DIR}/install_xercesc_g4_${_G4_VERSION}"
+XERCESC_INC_DIR="${XERCESC_INSTALL_DIR}/include"
+XERCESC_LIB="${XERCESC_INSTALL_DIR}/lib64/libxerces-c-3.2.so"
+
+CADMESH_BUILD_DIR="${BASE_DIR}/build_cadmesh_g4_${_G4_VERSION}"
+CADMESH_INSTALL_DIR="${BASE_DIR}/install_cadmesh_g4_${_G4_VERSION}"
+
+mkdir -p \
+  "${SRC_DIR}" "${BUILD_DIR}" "${INSTALL_DIR}" \
+  "${CADMESH_BUILD_DIR}" "${CADMESH_INSTALL_DIR}" \
+  "${XERCESC_BUILD_DIR}" "${XERCESC_INSTALL_DIR}"
+
+#####################################
+# Download & Install CMake
+#####################################
+log "Installing CMake..."
+rm -rf cmake cmake-3.14.3-Linux-x86_64 cmake-3.14.3-Linux-x86_64.tar.gz
+wget -q "${CMAKE_URL}"
 tar zxf cmake-3.14.3-Linux-x86_64.tar.gz
 mv cmake-3.14.3-Linux-x86_64 cmake
-rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
+rm -f cmake-3.14.3-Linux-x86_64.tar.gz
+log_success "CMake installed."
 
-#
-current_dir=${PWD}
+#####################################
+# Download & Build Xerces-C
+#####################################
+log "Building Xerces-C..."
+wget -q "${XERCES_URL}"
+tar zxf "${XERCES_ARCHIVE}"
+rm -f "${XERCES_ARCHIVE}"
+XERCES_SRC="${BASE_DIR}/xerces-c-${XERCES_VERSION}"
 
-# Parameters
-core_nb=`grep -c ^processor /proc/cpuinfo`
+cd "${XERCESC_BUILD_DIR}"
+rm -f CMakeCache.txt
 
-base_dir=${PWD}
+"${CMAKE_PATH}" \
+  -DCMAKE_INSTALL_PREFIX="${XERCESC_INSTALL_DIR}" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_LIBDIR=lib64 \
+  "${XERCES_SRC}"
 
-echo " "
-echo ${base_dir}
-echo " "
-
-# CMake command
-CMake_path=${base_dir}/cmake/bin/cmake
-
-# Geant4
-src_dir=${base_dir}/source_geant4.${_g4_version}/
-build_dir=${base_dir}/geant4_build_${_g4_version}/
-install_dir=${base_dir}/geant4_install_${_g4_version}/
-geant4_lib_dir=${install_dir}/lib/${folder_g4_version}/
-
-# XERCES-C
-
-xercesc_build_dir=(${base_dir}/build_xercesc_g4_${_g4_version}/)
-xercesc_install_dir=(${base_dir}/install_xercesc_g4_${_g4_version}/)
-xercesc_inc_dir=(${xercesc_install_dir}/include)
-xercesc_lib_dir=(${xercesc_install_dir}/lib64/libxerces-c-3.2.so)
-
-# CADMESH
-
-casmesh_build_dir=(${base_dir}/build_cadmesh_g4_${_g4_version}/)
-casmesh_install_dir=(${base_dir}/install_cadmesh_g4_${_g4_version}/)
-
-########## Creating folders
-
-mkdir -p ${build_dir} # -p will create only if it does not exist yet
-mkdir -p ${src_dir}
-mkdir -p ${install_dir}
-
-mkdir -p ${casmesh_build_dir}
-mkdir -p ${casmesh_install_dir}
-
-mkdir -p ${xercesc_build_dir}
-mkdir -p ${xercesc_install_dir}
-
-#### XERCES-C (to be able to use GDML files)
-
-## download xerces-c (for GDML)
-
-wget ${xerces_url}
-tar zxf ${base_dir}/${xerces_arc}
-rm -rf ${xerces_arc}
-
-xerces_src=${base_dir}/${xerces_w_ver}/
-
-## compile and install xerces-c
-
-cd ${xercesc_build_dir}
-
-echo "build of xerces-c: Attempt to execute CMake..."
-
-rm -rf CMakeCache.txt
-
-${CMake_path} \
--DCMAKE_INSTALL_PREFIX=${xercesc_install_dir} \
--DCMAKE_BUILD_TYPE=Release \
--DCMAKE_INSTALL_LIBDIR=lib64 \
-${xerces_src}
-echo "... done"
-
-echo "Attempt to compile and install xerces-c"
-
-G4VERBOSE=1 make -j${core_nb}
+make -j"${CORE_NB}" G4VERBOSE=1
 make install
+log_success "Xerces-C installed."
 
-cd ${base_dir}
-echo "... done"
+cd "${BASE_DIR}"
 
-#### GEANT4
+#####################################
+# Download & Build Geant4
+#####################################
+log "Building Geant4..."
+rm -rf "${SRC_DIR}"
+wget -q "${G4_URL}"
+tar zxf "geant4.${_G4_VERSION}.tar.gz"
+mv "geant4.${_G4_VERSION}" "${SRC_DIR}"
+rm -f "geant4.${_G4_VERSION}.tar.gz"
 
-## download Geant4
+cd "${BUILD_DIR}"
+rm -f CMakeCache.txt
 
-rm -rf ${src_dir}
-wget ${g4_url}
-tar zxf geant4.${_g4_version}.tar.gz
-mv geant4.${_g4_version} ${src_dir}
-rm -rf geant4.${_g4_version}.tar.gz
+"${CMAKE_PATH}" \
+  -DCMAKE_PREFIX_PATH="${XERCESC_INSTALL_DIR}" \
+  -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DGEANT4_BUILD_MULTITHREADED=ON \
+  -DGEANT4_INSTALL_DATA=ON \
+  -DGEANT4_USE_GDML=ON \
+  -DGEANT4_USE_G3TOG4=ON \
+  -DGEANT4_USE_QT=OFF \
+  -DGEANT4_FORCE_QT4=OFF \
+  -DGEANT4_USE_XM=OFF \
+  -DGEANT4_USE_OPENGL_X11=OFF \
+  -DGEANT4_USE_INVENTOR=OFF \
+  -DGEANT4_USE_RAYTRACER_X11=OFF \
+  -DGEANT4_USE_SYSTEM_CLHEP=OFF \
+  -DGEANT4_USE_SYSTEM_EXPAT=OFF \
+  -DGEANT4_USE_SYSTEM_ZLIB=OFF \
+  -DCMAKE_INSTALL_LIBDIR=lib \
+  -DXERCESC_INCLUDE_DIR="${XERCESC_INC_DIR}" \
+  -DXERCESC_LIBRARY="${XERCESC_LIB}" \
+  "../source_geant4.${_G4_VERSION}"
 
-## compile and install Geant4
-
-cd ${build_dir}
-rm -rf CMakeCache.txt
-
-echo "build_geant4: Attempt to execute CMake"
-
-${CMake_path} \
--DCMAKE_PREFIX_PATH=${xercesc_install_dir} \
--DCMAKE_INSTALL_PREFIX=${install_dir} \
--DCMAKE_BUILD_TYPE=Release \
--DGEANT4_BUILD_MULTITHREADED=ON \
--DGEANT4_INSTALL_DATA=ON \
--DGEANT4_USE_GDML=ON \
--DGEANT4_USE_G3TOG4=ON \
--DGEANT4_USE_QT=OFF \
--DGEANT4_FORCE_QT4=OFF \
--DGEANT4_USE_XM=OFF \
--DGEANT4_USE_OPENGL_X11=OFF \
--DGEANT4_USE_INVENTOR=OFF \
--DGEANT4_USE_RAYTRACER_X11=OFF \
--DGEANT4_USE_SYSTEM_CLHEP=OFF \
--DGEANT4_USE_SYSTEM_EXPAT=OFF \
--DGEANT4_USE_SYSTEM_ZLIB=OFF \
--DCMAKE_INSTALL_LIBDIR=lib \
--DXERCESC_INCLUDE_DIR=${xercesc_inc_dir} \
--DXERCESC_LIBRARY=${xercesc_lib_dir} \
-../source_geant4.${_g4_version}/
-
-echo "... Done"
-
-echo "Attempt to compile and install Geant4"
-
-G4VERBOSE=1 make -j${core_nb}
-
+make -j"${CORE_NB}" G4VERBOSE=1
 make install
+log_success "Geant4 installed."
 
-cd ${base_dir}
-echo "... Done"
+cd "${BASE_DIR}"
 
-#########################################################################
-#########################################################################
-#### set environement variables into '~/.bashrc'
+#####################################
+# Environment Setup
+#####################################
+setup_environment() {
+    log "Configuring environment in ~/.bashrc..."
+    local START_MARKER="## --> Added by Geant4 installation script"
+    local END_MARKER="## <-- Added by Geant4 installation script"
 
-echo "Attempt to setup up environement variables..."
+    # Clean previous entries
+    sed -i.bak "/${START_MARKER}/,/${END_MARKER}/d" ~/.bashrc || true
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
+    # Add new configuration
+    {
+        echo "${START_MARKER}"
+        echo "source ${INSTALL_DIR}/bin/geant4.sh"
+        echo "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:${XERCESC_INC_DIR}"
+        echo "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:${XERCESC_INC_DIR}"
+        echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${XERCESC_INSTALL_DIR}/lib64"
+        echo "export LIBRARY_PATH=\$LIBRARY_PATH:${XERCESC_INSTALL_DIR}/lib64"
+        echo "${END_MARKER}"
+    } >> ~/.bashrc
 
-# clean environement that was previously set by this script
-first_line=`grep -n "## --> Added by Geant4 installation script" ~/.bashrc | awk -F  ":" '{print $1}'`
-echo $first_line
-last_line=`grep -n "## <-- Added by Geant4 installation script" ~/.bashrc | awk -F  ":" '{print $1}'`
-echo $last_line
-
-re='^[0-9]+$'
-if [[ $first_line =~ $re ]] ; then # if $first_line is a number (i.e. it was found)
-    if [[ $first_line =~ $re ]] ; then # if $last_line is a number (i.e. it was found)
-        sed -i.bak "${first_line},${last_line}d" ~/.bashrc # delete text in .bashrc from first-line to last-line
-    fi
-fi
-
-#
-echo "## --> Added by Geant4 installation script" >> ~/.bashrc
-
-set_environement() {
-    
-    cd ${base_dir}
-    
-    if grep -Fxq "$1" ~/.bashrc
-    then
-        echo -e "${GREEN}< source $1 > already set up in ~/.bashrc.${NC}"
-    else
-        echo "    " >> ~/.bashrc
-        echo $1 >> ~/.bashrc
-        echo "______"
-        echo -e "${GREEN}added ${RED}$1${GREEN} to ${RED}~/.bashrc${GREEN} file.${NC}"
-    fi
+    log_success "Environment configuration added."
 }
 
-# Geant4 + data
-set_environement "source ${install_dir}/bin/geant4.sh"
+setup_environment
 
-
-# xerces-c
-set_environement "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:${xercesc_install_dir}/include/"
-set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:${xercesc_install_dir}/include/"
-set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${xercesc_install_dir}/lib64/"
-set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:${xercesc_install_dir}/lib64/"
-set_environement "export PATH=\$PATH:${xercesc_install_dir}/include/"
-
-echo " " >> ~/.bashrc
-echo "## <-- Added by Geant4 installation script" >> ~/.bashrc
-echo "... Done"
-echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
+#####################################
+# Summary
+#####################################
+log_success "Geant4 installation completed!"
+log_warn "Run 'source ~/.bashrc' or restart your terminal to apply environment variables."
