@@ -1,93 +1,104 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 #################
-mkdir -p geant4 # directory were everything is built and installed
+# Create main directory for everything
+mkdir -p geant4
 cd geant4
-#############
+#################
 
 ########################## VARIABLES
 
-##############  PROGRAMS' VERSIONS AND URLs : MAY CHANGE IN THE FUTURE
-g4_version=10.7.p03
-_g4_version=10.07.p03
-__g4_version=10.7.3
-folder_g4_version=Geant4-10.7.3
-g4_url=("https://github.com/Geant4/geant4/archive/refs/tags/v10.7.3.tar.gz")
-g4_arc=("geant4.${_g4_version}.tar.gz")
+############## PROGRAMS' VERSIONS AND URLs : MAY CHANGE IN THE FUTURE
+readonly G4_VERSION="10.7.p04"
+readonly _G4_VERSION="10.07.p04"
+readonly __G4_VERSION="10.7.4"
+readonly FOLDER_G4_VERSION="Geant4-10.7.4"
+readonly G4_URL="https://github.com/Geant4/geant4/archive/refs/tags/v${__G4_VERSION}.tar.gz"
+readonly G4_ARC="geant4.${_G4_VERSION}.tar.gz"
 
-cmake_download_url=https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz
+readonly CMAKE_DOWNLOAD_URL="https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz"
 
-xerces_w_ver=xerces-c-3.2.2
-xerces_arc=${xerces_w_ver}.tar.gz
-xerces_url=("https://github.com/apache/xerces-c/archive/refs/tags/v3.2.2.tar.gz")
+readonly XERCES_W_VER="xerces-c-3.2.2"
+readonly XERCES_ARC="${XERCES_W_VER}.tar.gz"
+readonly XERCES_URL="https://github.com/apache/xerces-c/archive/refs/tags/v3.2.2.tar.gz"
 
 ####################################################
 
-# getting CMake
-rm -rf cmake
-rm -rf cmake-3.14.3-Linux-x86_64
-rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
-wget ${cmake_download_url}
-tar zxf cmake-3.14.3-Linux-x86_64.tar.gz
-mv cmake-3.14.3-Linux-x86_64 cmake
-rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly NC='\033[0m' # No Color
 
-# CMake command
-base_dir=${PWD}
-CMake_path=${base_dir}/cmake/bin/cmake
+# Base directories
+readonly BASE_DIR="${PWD}"
+readonly CURRENT_DIR="${PWD}"
 
-#
-current_dir=$PWD
+# Core count for parallel compilation
+readonly CORE_NB=$(grep -c ^processor /proc/cpuinfo)
 
-# Parameters
-core_nb=`grep -c ^processor /proc/cpuinfo`
+# CMake setup
+setup_cmake() {
+    echo "Setting up CMake..."
+    rm -rf cmake cmake-3.14.3-Linux-x86_64 cmake-3.14.3-Linux-x86_64.tar.gz
+    
+    wget "${CMAKE_DOWNLOAD_URL}"
+    tar zxf cmake-3.14.3-Linux-x86_64.tar.gz
+    mv cmake-3.14.3-Linux-x86_64 cmake
+    rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
+    
+    echo "CMake setup complete."
+}
 
+setup_cmake
+readonly CMAKE_PATH="${BASE_DIR}/cmake/bin/cmake"
 
+# Geant4 directories
+readonly SRC_DIR="${BASE_DIR}/source_geant4.${_G4_VERSION}/"
+readonly BUILD_DIR="${BASE_DIR}/geant4_build_${_G4_VERSION}/"
+readonly INSTALL_DIR="${BASE_DIR}/geant4_install_${_G4_VERSION}/"
+readonly GEANT4_LIB_DIR="${INSTALL_DIR}/lib/${FOLDER_G4_VERSION}/"
 
-# Geant4
-src_dir=$base_dir/source_geant4.${_g4_version}/
-build_dir=$base_dir/geant4_build_${_g4_version}/
-install_dir=$base_dir/geant4_install_${_g4_version}/
-geant4_lib_dir=${install_dir}/lib/${folder_g4_version}/
+# XERCES-C directories
+readonly XERCESC_BUILD_DIR="${BASE_DIR}/build_xercesc_g4_${_G4_VERSION}/"
+readonly XERCESC_INSTALL_DIR="${BASE_DIR}/install_xercesc_g4_${_G4_VERSION}/"
+readonly XERCESC_INC_DIR="${XERCESC_INSTALL_DIR}/include"
+readonly XERCESC_LIB_DIR="${XERCESC_INSTALL_DIR}/lib64/libxerces-c-3.2.so"
 
-# XERCES-C
-
-xercesc_build_dir=($base_dir/build_xercesc_g4_${_g4_version}/)
-xercesc_install_dir=($base_dir/install_xercesc_g4_${_g4_version}/)
-xercesc_inc_dir=(${xercesc_install_dir}/include)
-xercesc_lib_dir=(${xercesc_install_dir}/lib64/libxerces-c-3.2.so)
-
-########## Creating folders
-
-mkdir -p ${build_dir} # -p will create only if it does not exist yet
-mkdir -p ${src_dir}
-mkdir -p ${install_dir}
-
-mkdir -p $xercesc_build_dir
-mkdir -p $xercesc_install_dir
+########## Create necessary folders
+echo "Creating necessary directories..."
+mkdir -p "${BUILD_DIR}" "${SRC_DIR}" "${INSTALL_DIR}"
+mkdir -p "${XERCESC_BUILD_DIR}" "${XERCESC_INSTALL_DIR}"
+echo "Directories created."
 
 ############# CHECK IF OS IS UBUNTU
-echo "checking if OS is Ubuntu..."
-# Checking if OS is Ubuntu
-if [ -f /etc/os-release ]; then
+check_ubuntu() {
+    echo "Checking if OS is Ubuntu..."
+    
+    if [[ ! -f /etc/os-release ]]; then
+        echo "Error: Cannot determine OS. /etc/os-release not found. Aborting."
+        exit 1
+    fi
+    
+    # shellcheck source=/etc/os-release
     . /etc/os-release
-    OS=$NAME
-    VER=$VERSION_ID
-fi
-
-if [ ! "$OS" = "Ubuntu" ]; then
-    echo "Error: OS is not Ubuntu. Script works only for Ubuntu. Aborting."
-    exit 1
-else
+    local os_name="$NAME"
+    
+    if [[ "$os_name" != "Ubuntu" ]]; then
+        echo "Error: OS is not Ubuntu. Script works only for Ubuntu. Aborting."
+        exit 1
+    fi
+    
     echo "... OS is Ubuntu"
-fi
-#############
+}
+
+check_ubuntu
 
 #########################################################################
 ############# CHECK IF DEPENDENCIES ARE SATISFIED, OTHERWISE INSTALL THEM
 
-ubuntu_dependences_list=( "build-essential"
+readonly UBUNTU_DEPENDENCIES=(
+    "build-essential"
     "qtcreator"
     "qtbase5-dev"
     "cmake-qt-gui"
@@ -107,185 +118,198 @@ ubuntu_dependences_list=( "build-essential"
     "uuid-runtime"
 )
 
-entered_one_time=true
+ENTERED_ONE_TIME=true
 
-run_install()
-{
+run_install() {
     echo "Some missing dependencies were detected."
-    ## Prompt the user
-    if [ entered_one_time=true ]; then
-        entered_one_time=false
-        read -p "Do you have (root) sudo access ? [Y/n]. It is required to install missing dependencies: " answer
-        ## Set the default value if no answer was given
-        answer=${answer:N}
+    
+    # Prompt for sudo access
+    if [[ "$ENTERED_ONE_TIME" == true ]]; then
+        ENTERED_ONE_TIME=false
+        read -rp "Do you have (root) sudo access? [Y/n]. It is required to install missing dependencies: " answer
+        answer=${answer:-Y}  # Default to Y if no answer given
+        
         if [[ $answer =~ [Nn] ]]; then
-            echo "root access is required to install missing dependencies. Aborting."
+            echo "Root access is required to install missing dependencies. Aborting."
             exit 1
         fi
     fi
-    ## Prompt the user
-    #sudo add-apt-repository ppa:rock-core/qt4
-    read -p "Do you want to install missing dependencies? [Y/n]: " answer
-    ## Set the default value if no answer was given
-    answer=${answer:Y}
-    ## If the answer matches y or Y, install
+    
+    # Prompt for installation
+    read -rp "Do you want to install missing dependencies? [Y/n]: " answer
+    answer=${answer:-Y}  # Default to Y if no answer given
+    
     if [[ $answer =~ [Yy] ]]; then
-        sudo apt-get install ${ubuntu_dependences_list[@]}
+        sudo apt-get update
+        sudo apt-get install -y "${UBUNTU_DEPENDENCIES[@]}"
     else
         echo "Missing dependencies are required for proper compilation and installation. Aborting."
-        exit 0
+        exit 1
     fi
 }
 
+check_dependencies() {
+    echo "Checking dependencies..."
+    
+    # Check if all dependencies are installed
+    if ! dpkg -s "${UBUNTU_DEPENDENCIES[@]}" >/dev/null 2>&1; then
+        run_install
+    fi
+    
+    echo "... dependencies are satisfied."
+}
 
-echo "checking dependencies..."
-
-dpkg -s "${ubuntu_dependences_list[@]}" >/dev/null 2>&1 || run_install
-
-echo "... dependencies are satisfied."
+check_dependencies
 
 #########################################################################
-
 
 #### XERCES-C (to be able to use GDML files)
 
-## download xerces-c (for GDML)
+build_xerces() {
+    echo "Building Xerces-C..."
+    
+    # Download xerces-c (for GDML)
+    rm -rf v3.2.2.tar.gz*
+    wget "${XERCES_URL}"
+    mv v3.2.2.tar.gz "${XERCES_ARC}"
+    tar zxf "${BASE_DIR}/${XERCES_ARC}"
+    rm -rf "${XERCES_ARC}"
+    
+    local xerces_src="${BASE_DIR}/${XERCES_W_VER}"
+    
+    # Compile and install xerces-c
+    cd "${XERCESC_BUILD_DIR}"
+    
+    echo "Build of xerces-c: Executing CMake..."
+    rm -rf CMakeCache.txt
+    
+    "${CMAKE_PATH}" \
+        -DCMAKE_INSTALL_PREFIX="${XERCESC_INSTALL_DIR}" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_LIBDIR=lib64 \
+        "${xerces_src}"
+    
+    echo "... done"
+    
+    echo "Compiling and installing xerces-c..."
+    G4VERBOSE=1 make -j"${CORE_NB}"
+    make install
+    
+    cd "${BASE_DIR}"
+    echo "Xerces-C build complete."
+}
 
-rm -rf v3.2.2.tar.gz*
-wget $xerces_url
-mv v3.2.2.tar.gz $xerces_arc
-tar zxf $base_dir/$xerces_arc
-rm -rf $xerces_arc
-
-xerces_src=$base_dir/$xerces_w_ver
-
-## compile and install xerces-c
-
-cd $xercesc_build_dir
-
-echo "build of xerces-c: Attempt to execute CMake..."
-
-rm -rf CMakeCache.txt
-
-$CMake_path \
--DCMAKE_INSTALL_PREFIX=${xercesc_install_dir} \
--DCMAKE_BUILD_TYPE=Release \
--DCMAKE_INSTALL_LIBDIR=lib64 \
-$xerces_src
-echo "... done"
-
-echo "Attempt to compile and install xerces-c"
-
-G4VERBOSE=1 make -j${core_nb}
-make install
-
-cd $base_dir
-echo "... done"
+build_xerces
 
 #### GEANT4
 
-## download Geant4
-
-rm -rf v10.7.3.tar.gz*
-rm -rf ${src_dir}
-wget $g4_url
-mv v10.7.3.tar.gz $g4_arc
-tar zxf $g4_arc
-mv geant4-${__g4_version} ${src_dir}
-rm -rf geant4.${_g4_version}.tar.gz
-
-## compile and install Geant4
-
-cd ${build_dir}
-rm -rf CMakeCache.txt
-
-echo "build_geant4: Attempt to execute CMake"
-
-$CMake_path \
--DCMAKE_PREFIX_PATH=${xercesc_install_dir} \
--DCMAKE_INSTALL_PREFIX=${install_dir} \
--DCMAKE_BUILD_TYPE=Release \
--DGEANT4_BUILD_MULTITHREADED=ON \
--DGEANT4_INSTALL_DATA=ON \
--DGEANT4_USE_GDML=ON \
--DGEANT4_USE_G3TOG4=ON \
--DGEANT4_USE_QT=ON \
--DGEANT4_FORCE_QT4=OFF \
--DGEANT4_USE_XM=ON \
--DGEANT4_USE_OPENGL_X11=ON \
--DGEANT4_USE_INVENTOR=OFF \
--DGEANT4_USE_RAYTRACER_X11=ON \
--DGEANT4_USE_SYSTEM_CLHEP=OFF \
--DGEANT4_USE_SYSTEM_EXPAT=OFF \
--DGEANT4_USE_SYSTEM_ZLIB=OFF \
--DCMAKE_INSTALL_LIBDIR=lib \
--DXERCESC_INCLUDE_DIR=${xercesc_inc_dir} \
--DXERCESC_LIBRARY=${xercesc_lib_dir} \
-../source_geant4.${_g4_version}/
-
-echo "... Done"
-
-echo "Attempt to compile and install Geant4"
-
-G4VERBOSE=1 make -j${core_nb}
-
-make install
-
-cd $base_dir
-echo "... Done"
-
-#########################################################################
-#########################################################################
-#### set environement variables into '~/.bashrc'
-
-echo "Attempt to setup up environement variables..."
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-# clean environement that was previously set by this script
-first_line=`grep -n "## --> Added by Geant4 installation script" ~/.bashrc | awk -F  ":" '{print $1}'`
-echo $first_line
-last_line=`grep -n "## <-- Added by Geant4 installation script" ~/.bashrc | awk -F  ":" '{print $1}'`
-echo $last_line
-
-re='^[0-9]+$'
-if [[ $first_line =~ $re ]] ; then # if $first_line is a number (i.e. it was found)
-    if [[ $last_line =~ $re ]] ; then # if $last_line is a number (i.e. it was found)
-        sed -i.bak "${first_line},${last_line}d" ~/.bashrc # delete text in .bashrc from first-line to last-line
-    fi
-fi
-
-#
-echo "## --> Added by Geant4 installation script" >> ~/.bashrc
-
-set_environement() {
+build_geant4() {
+    echo "Building Geant4..."
     
-    cd ${base_dir}
+    # Download Geant4
+    rm -rf "v${__G4_VERSION}.tar.gz"*
+    rm -rf "${SRC_DIR}"
     
-    if grep -Fxq "$1" ~/.bashrc
-    then
-        echo -e "${GREEN}< source $1 > already set up in ~/.bashrc.${NC}"
-    else
-        echo "    " >> ~/.bashrc
-        echo $1 >> ~/.bashrc
-        echo "______"
-        echo -e "${GREEN}added ${RED}$1${GREEN} to ${RED}~/.bashrc${GREEN} file.${NC}"
-    fi
+    wget "${G4_URL}"
+    mv "v${__G4_VERSION}.tar.gz" "${G4_ARC}"
+    tar zxf "${G4_ARC}"
+    mv "geant4-${__G4_VERSION}" "${SRC_DIR}"
+    rm -rf "geant4.${_G4_VERSION}.tar.gz"
+    
+    # Compile and install Geant4
+    cd "${BUILD_DIR}"
+    rm -rf CMakeCache.txt
+    
+    echo "Build Geant4: Executing CMake..."
+    
+    "${CMAKE_PATH}" \
+        -DCMAKE_PREFIX_PATH="${XERCESC_INSTALL_DIR}" \
+        -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DGEANT4_BUILD_MULTITHREADED=ON \
+        -DGEANT4_INSTALL_DATA=ON \
+        -DGEANT4_USE_GDML=ON \
+        -DGEANT4_USE_G3TOG4=ON \
+        -DGEANT4_USE_QT=ON \
+        -DGEANT4_FORCE_QT4=OFF \
+        -DGEANT4_USE_XM=ON \
+        -DGEANT4_USE_OPENGL_X11=ON \
+        -DGEANT4_USE_INVENTOR=OFF \
+        -DGEANT4_USE_RAYTRACER_X11=ON \
+        -DGEANT4_USE_SYSTEM_CLHEP=OFF \
+        -DGEANT4_USE_SYSTEM_EXPAT=OFF \
+        -DGEANT4_USE_SYSTEM_ZLIB=OFF \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DXERCESC_INCLUDE_DIR="${XERCESC_INC_DIR}" \
+        -DXERCESC_LIBRARY="${XERCESC_LIB_DIR}" \
+        "../source_geant4.${_G4_VERSION}/"
+    
+    echo "... Done"
+    
+    echo "Compiling and installing Geant4..."
+    G4VERBOSE=1 make -j"${CORE_NB}"
+    make install
+    
+    cd "${BASE_DIR}"
+    echo "Geant4 build complete."
 }
 
-# Geant4 + data
-set_environement "source ${install_dir}/bin/geant4.sh"
+build_geant4
 
-# xerces-c
-set_environement "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:${xercesc_install_dir}/include/"
-set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:${xercesc_install_dir}/include/"
-set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${xercesc_install_dir}/lib64/"
-set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:${xercesc_install_dir}/lib64/"
-set_environement "export PATH=\$PATH:${xercesc_install_dir}/include/"
+#########################################################################
+#### Set environment variables in '~/.bashrc'
 
-echo " " >> ~/.bashrc
-echo "## <-- Added by Geant4 installation script" >> ~/.bashrc
-echo "... Done"
-echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
+setup_environment_variables() {
+    echo "Setting up environment variables..."
+    
+    # Clean environment that was previously set by this script
+    local first_line
+    local last_line
+    
+    first_line=$(grep -n "## --> Added by Geant4 installation script" ~/.bashrc | awk -F: '{print $1}' || true)
+    last_line=$(grep -n "## <-- Added by Geant4 installation script" ~/.bashrc | awk -F: '{print $1}' || true)
+    
+    local re='^[0-9]+$'
+    if [[ $first_line =~ $re && $last_line =~ $re ]]; then
+        # Create backup and remove old environment setup
+        sed -i.bak "${first_line},${last_line}d" ~/.bashrc
+    fi
+    
+    # Add header comment
+    echo "## --> Added by Geant4 installation script" >> ~/.bashrc
+    
+    # Function to set environment variable
+    set_environment_var() {
+        local env_var="$1"
+        
+        cd "${BASE_DIR}"
+        
+        if grep -Fxq "$env_var" ~/.bashrc; then
+            echo -e "${GREEN}< $env_var > already set up in ~/.bashrc.${NC}"
+        else
+            echo "    " >> ~/.bashrc
+            echo "$env_var" >> ~/.bashrc
+            echo "______"
+            echo -e "${GREEN}Added ${RED}$env_var${GREEN} to ${RED}~/.bashrc${GREEN} file.${NC}"
+        fi
+    }
+    
+    # Geant4 + data
+    set_environment_var "source ${INSTALL_DIR}/bin/geant4.sh"
+    
+    # xerces-c
+    set_environment_var "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:${XERCESC_INSTALL_DIR}/include/"
+    set_environment_var "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:${XERCESC_INSTALL_DIR}/include/"
+    set_environment_var "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${XERCESC_INSTALL_DIR}/lib64/"
+    set_environment_var "export LIBRARY_PATH=\$LIBRARY_PATH:${XERCESC_INSTALL_DIR}/lib64/"
+    set_environment_var "export PATH=\$PATH:${XERCESC_INSTALL_DIR}/include/"
+    
+    # Add footer comment
+    echo " " >> ~/.bashrc
+    echo "## <-- Added by Geant4 installation script" >> ~/.bashrc
+    
+    echo "Environment variables setup complete."
+    echo -e "${RED}Please execute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
+}
+
+setup_environment_variables
