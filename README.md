@@ -100,6 +100,38 @@ geant4/cadmesh_env.sh
 
 By default it also adds a managed CADMesh block to `~/.bashrc`.
 
+## Matio, HDF5, And Zlib Install
+
+Install zlib, HDF5, and matio for MATLAB MAT v7.3 output:
+
+```bash
+./installation_script_linuxOnly_matio_hdf5_zlib.bash
+```
+
+This installer uses a pinned, tested compatibility stack:
+
+- zlib 1.3.2
+- HDF5 1.14.6
+- matio 1.5.30
+
+Useful options:
+
+```bash
+./installation_script_linuxOnly_matio_hdf5_zlib.bash --dry-run
+./installation_script_linuxOnly_matio_hdf5_zlib.bash --jobs 4
+./installation_script_linuxOnly_matio_hdf5_zlib.bash --clean
+./installation_script_linuxOnly_matio_hdf5_zlib.bash --no-update-shell-rc
+./installation_script_linuxOnly_matio_hdf5_zlib.bash --base-dir /path/to/workdir
+```
+
+After a successful install, the script writes:
+
+```text
+geant4/matio_hdf5_zlib_env.sh
+```
+
+By default it also adds a managed matio/HDF5/zlib block to `~/.bashrc`.
+
 ## Docker Deployment
 
 Docker deployment is kept in git under `docker_easy_deployment/`:
