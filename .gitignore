@@ -1,2 +1,14 @@
 *~
+
+# Generated/downloaded by the installation scripts
 geant4/
+cmake/
+cmake-*/
+*.tar.gz
+v*.tar.gz
+xerces-c-*/
+source_geant4.*/
+geant4_build_*/
+geant4_install_*/
+build_xercesc_g4_*/
+install_xercesc_g4_*/
