@@ -1,147 +1,319 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-#################
-mkdir -p geant4 # directory were everything is built and installed
-cd geant4
-base_dir=$PWD
-#############
-source /geant4/geant4_install_10.07.p03/bin/geant4.sh || true
-git config --global http.sslverify "false" || true
-########################## VARIABLES
+GEANT4_VERSION="10.7.4"
+GEANT4_INTERNAL_VERSION="10.07.p04"
 
-##############  PROGRAMS' VERSIONS AND URLs : MAY CHANGE IN THE FUTURE
+BASE_DIR="/geant4"
+JOBS=""
+DRY_RUN=false
+UPDATE_SHELL_RC=true
 
-cmake_download_url=https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz
+CADMESH_REPO_URL="https://github.com/davsar89/CADMesh.git"
 
-casmesh_w_ver=1.1
-casmesh_arc=v${casmesh_w_ver}.tar.gz
-casmesh_url=https://github.com/davsar89/CADMesh.git
+log() {
+    printf '[cadmesh-install] %s\n' "$*"
+}
 
-####################################################
+warn() {
+    printf '[cadmesh-install] warning: %s\n' "$*" >&2
+}
 
-# getting CMake
-rm -rf cmake
-rm -rf cmake-3.14.3-Linux-x86_64
-rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
-wget ${cmake_download_url}
-tar zxf cmake-3.14.3-Linux-x86_64.tar.gz
-mv cmake-3.14.3-Linux-x86_64 cmake
-rm -rf cmake-3.14.3-Linux-x86_64.tar.gz
+die() {
+    printf '[cadmesh-install] error: %s\n' "$*" >&2
+    exit 1
+}
 
-# CMake command
-CMake_path=${base_dir}/cmake/bin/cmake
+usage() {
+    cat <<EOF
+Usage: $0 [options]
 
-#
-current_dir=$PWD
+Build and install CADMesh against the Geant4 10.7.4 install.
 
-# Parameters
-core_nb=`grep -c ^processor /proc/cpuinfo`
+Options:
+  --base-dir PATH         Directory containing the Geant4 install. Default: /geant4
+  --jobs N               Number of parallel build jobs. Default: auto-detect.
+  --dry-run              Validate inputs and print planned actions without building.
+  --no-update-shell-rc   Do not modify ~/.bashrc.
+  -h, --help             Show this help message.
+EOF
+}
 
-# CADMESH
+absolute_path() {
+    local path="$1"
 
-casmesh_build_dir=($base_dir/build_cadmesh_g4_${_g4_version}/)
-casmesh_install_dir=($base_dir/install_cadmesh_g4_${_g4_version}/)
-
-rm -rf $casmesh_build_dir
-rm -rf $casmesh_install_dir
-
-########## Creating folders
-
-mkdir -p $casmesh_build_dir
-mkdir -p $casmesh_install_dir
-
-#### CADMESH
-# CADMESH is a CAD file interface for GEANT4, made by Poole, C. M. et al.
-# See https://github.com/christopherpoole/CADMesh
-
-## download CADMESH
-
-rm -rf CADMesh
-
-git clone $casmesh_url
-casmesh_src=$base_dir/CADMesh
-
-## compile and install CADMESH
-
-cd $casmesh_build_dir
-
-echo "build of CADMESH: Attempt to execute CMake..."
-
-rm -rf CMakeCache.txt
-
-$CMake_path \
--DCMAKE_INSTALL_PREFIX=${casmesh_install_dir} \
--DCMAKE_BUILD_TYPE=Release \
--DCMAKE_INSTALL_LIBDIR=lib \
--DGeant4_DIR=$geant4_lib_dir \
-$casmesh_src
-
-echo "... done"
-
-echo "Attempt to compile and install CADMESH"
-
-G4VERBOSE=1 make -j${core_nb}
-make install
-
-cd $base_dir
-
-echo "... done"
-
-#########################################################################
-#########################################################################
-#### set environement variables into '~/.bashrc'
-
-echo "Attempt to setup up environement variables..."
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-# clean environement that was previously set by this script
-first_line=`grep -n "## --> Added by CADmesh installation script" ~/.bashrc | awk -F  ":" '{print $1}'`
-echo $first_line
-last_line=`grep -n "## <-- Added by CADmesh installation script" ~/.bashrc | awk -F  ":" '{print $1}'`
-echo $last_line
-
-re='^[0-9]+$'
-if [[ $first_line =~ $re ]] ; then # if $first_line is a number (i.e. it was found)
-    if [[ $last_line =~ $re ]] ; then # if $last_line is a number (i.e. it was found)
-        sed -i.bak "${first_line},${last_line}d" ~/.bashrc # delete text in .bashrc from first-line to last-line
-    fi
-fi
-
-#
-
-echo "## --> Added by hdf5 zlib matio installation script" >> ~/.bashrc
-
-set_environement() {
-    
-    cd $base_dir
-    
-    if grep -Fxq "$1" ~/.bashrc
-    then
-        echo -e "${GREEN}< source $1 > already set up in ~/.bashrc.${NC}"
+    if [[ "$path" == "/" ]]; then
+        printf '/\n'
+    elif [[ "$path" == /* ]]; then
+        printf '%s\n' "${path%/}"
     else
-        echo "    " >> ~/.bashrc
-        echo $1 >> ~/.bashrc
-        echo "______"
-        echo -e "${GREEN}added ${RED}$1${GREEN} to ${RED}~/.bashrc${GREEN} file.${NC}"
+        printf '%s/%s\n' "$(pwd)" "${path%/}"
     fi
 }
 
-# CADMesh
-set_environement "export cadmesh_DIR=${casmesh_install_dir}/lib/cmake/cadmesh-1.1.0/"
-set_environement "export C_INCLUDE_PATH=\$C_INCLUDE_PATH:${casmesh_install_dir}/include/"
-set_environement "export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:${casmesh_install_dir}/include/"
-set_environement "export PATH=\$PATH:${casmesh_install_dir}/include/"
-set_environement "export LIBRARY_PATH=\$LIBRARY_PATH:${casmesh_install_dir}/lib/"
-set_environement "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${casmesh_install_dir}/lib/"
+parse_args() {
+    while (($#)); do
+        case "$1" in
+            --base-dir)
+                shift
+                [[ $# -gt 0 && -n "$1" ]] || die "--base-dir requires a path"
+                BASE_DIR="$1"
+                ;;
+            --jobs)
+                shift
+                [[ $# -gt 0 && -n "$1" ]] || die "--jobs requires a positive integer"
+                [[ "$1" =~ ^[1-9][0-9]*$ ]] || die "--jobs requires a positive integer"
+                JOBS="$1"
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                ;;
+            --no-update-shell-rc)
+                UPDATE_SHELL_RC=false
+                ;;
+            -h | --help)
+                usage
+                exit 0
+                ;;
+            *)
+                die "Unknown option: $1"
+                ;;
+        esac
+        shift
+    done
+}
 
-echo "## <-- Added by CADmesh installation script" >> ~/.bashrc
+detect_jobs() {
+    if [[ -n "$JOBS" ]]; then
+        return
+    fi
 
-echo "... Done"
-echo -e "${RED}Please excecute command < ${GREEN}source ~/.bashrc${RED} > or re-open a terminal for the system to be able to find the databases and libraries.${NC}"
+    if command -v nproc >/dev/null 2>&1; then
+        JOBS="$(nproc)"
+    elif [[ -r /proc/cpuinfo ]]; then
+        JOBS="$(grep -c '^processor' /proc/cpuinfo || true)"
+    fi
 
+    if [[ -z "$JOBS" || ! "$JOBS" =~ ^[1-9][0-9]*$ ]]; then
+        JOBS="1"
+    fi
+}
 
+configure_paths() {
+    BASE_DIR="$(absolute_path "$BASE_DIR")"
+    [[ "$BASE_DIR" != "/" ]] || die "Refusing to use / as the base directory"
 
+    GEANT4_INSTALL_DIR="${BASE_DIR}/geant4_install_${GEANT4_INTERNAL_VERSION}"
+    GEANT4_ENV_FILE="${BASE_DIR}/geant4_10_7_env.sh"
+    DEFAULT_GEANT4_CMAKE_DIR="${GEANT4_INSTALL_DIR}/lib/Geant4-${GEANT4_VERSION}"
+    CMAKE_PATH="${BASE_DIR}/cmake/bin/cmake"
+
+    CADMESH_SOURCE_DIR="${BASE_DIR}/CADMesh"
+    CADMESH_BUILD_DIR="${BASE_DIR}/build_cadmesh_g4_${GEANT4_INTERNAL_VERSION}"
+    CADMESH_INSTALL_DIR="${BASE_DIR}/install_cadmesh_g4_${GEANT4_INTERNAL_VERSION}"
+    CADMESH_ENV_FILE="${BASE_DIR}/cadmesh_env.sh"
+}
+
+print_configuration() {
+    cat <<EOF
+[cadmesh-install] Configuration
+  Base dir:      ${BASE_DIR}
+  Geant4:        ${GEANT4_VERSION} (${GEANT4_INTERNAL_VERSION})
+  Geant4 env:    ${GEANT4_ENV_FILE}
+  CMake:         ${CMAKE_PATH}
+  CADMesh repo:  ${CADMESH_REPO_URL}
+  Source dir:    ${CADMESH_SOURCE_DIR}
+  Build dir:     ${CADMESH_BUILD_DIR}
+  Install dir:   ${CADMESH_INSTALL_DIR}
+  Env file:      ${CADMESH_ENV_FILE}
+  Jobs:          ${JOBS}
+  Update bashrc: ${UPDATE_SHELL_RC}
+EOF
+}
+
+print_dry_run_plan() {
+    cat <<EOF
+[cadmesh-install] Dry-run major actions
+  1. Source Geant4 environment from ${GEANT4_ENV_FILE}.
+  2. Locate Geant4Config.cmake under ${GEANT4_INSTALL_DIR}.
+  3. Remove previous CADMesh source/build/install directories.
+  4. Clone ${CADMESH_REPO_URL}.
+  5. Configure, build, and install CADMesh.
+  6. Write CADMesh environment file: ${CADMESH_ENV_FILE}
+  7. Update ~/.bashrc: ${UPDATE_SHELL_RC}
+EOF
+}
+
+ensure_inside_base() {
+    local target="$1"
+
+    case "$target" in
+        "${BASE_DIR}/"*) ;;
+        *) die "Refusing to remove path outside base directory: ${target}" ;;
+    esac
+}
+
+remove_generated_path() {
+    local target="$1"
+    ensure_inside_base "$target"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log "Dry run: would remove ${target}"
+        return
+    fi
+
+    if [[ -e "$target" || -L "$target" ]]; then
+        rm -rf -- "$target"
+    fi
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
+}
+
+source_geant4_environment() {
+    [[ -f "$GEANT4_ENV_FILE" ]] || die "Geant4 environment file not found: ${GEANT4_ENV_FILE}"
+    # shellcheck source=/dev/null
+    source "$GEANT4_ENV_FILE"
+}
+
+find_geant4_cmake_dir() {
+    if [[ -f "${DEFAULT_GEANT4_CMAKE_DIR}/Geant4Config.cmake" ]]; then
+        printf '%s\n' "$DEFAULT_GEANT4_CMAKE_DIR"
+        return
+    fi
+
+    find "$GEANT4_INSTALL_DIR" -type f -name Geant4Config.cmake -printf '%h\n' -quit 2>/dev/null || true
+}
+
+check_prerequisites() {
+    require_command git
+    require_command make
+
+    [[ -x "$CMAKE_PATH" ]] || die "CMake executable not found: ${CMAKE_PATH}"
+    [[ -d "$GEANT4_INSTALL_DIR" ]] || die "Geant4 install directory not found: ${GEANT4_INSTALL_DIR}"
+
+    source_geant4_environment
+    GEANT4_CMAKE_DIR="$(find_geant4_cmake_dir)"
+    [[ -n "$GEANT4_CMAKE_DIR" ]] || die "Geant4Config.cmake not found under ${GEANT4_INSTALL_DIR}"
+}
+
+write_cadmesh_environment() {
+    log "Writing CADMesh environment file: ${CADMESH_ENV_FILE}"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log "Dry run: would write ${CADMESH_ENV_FILE}"
+        return
+    fi
+
+    cat >"$CADMESH_ENV_FILE" <<EOF
+# Generated by installation_script_linux_only_CADmesh.bash
+# shellcheck shell=bash
+
+export cadmesh_DIR="${CADMESH_INSTALL_DIR}/lib/cmake/cadmesh-1.1.0"
+export C_INCLUDE_PATH="\${C_INCLUDE_PATH:+\${C_INCLUDE_PATH}:}${CADMESH_INSTALL_DIR}/include"
+export CPLUS_INCLUDE_PATH="\${CPLUS_INCLUDE_PATH:+\${CPLUS_INCLUDE_PATH}:}${CADMESH_INSTALL_DIR}/include"
+export LIBRARY_PATH="\${LIBRARY_PATH:+\${LIBRARY_PATH}:}${CADMESH_INSTALL_DIR}/lib"
+export LD_LIBRARY_PATH="\${LD_LIBRARY_PATH:+\${LD_LIBRARY_PATH}:}${CADMESH_INSTALL_DIR}/lib"
+EOF
+}
+
+remove_marker_block() {
+    local file="$1"
+    local start_marker="$2"
+    local end_marker="$3"
+    local first_line=""
+    local last_line=""
+
+    while true; do
+        first_line="$(grep -nF "$start_marker" "$file" | head -n1 | cut -d: -f1 || true)"
+        last_line="$(grep -nF "$end_marker" "$file" | head -n1 | cut -d: -f1 || true)"
+
+        if [[ -z "$first_line" || -z "$last_line" ]]; then
+            break
+        fi
+
+        if ((first_line > last_line)); then
+            warn "Found malformed shell rc marker block in ${file}; leaving it unchanged"
+            break
+        fi
+
+        sed -i.bak "${first_line},${last_line}d" "$file"
+    done
+}
+
+update_shell_rc() {
+    if [[ "$UPDATE_SHELL_RC" != true ]]; then
+        log "Skipping ~/.bashrc update."
+        return
+    fi
+
+    local bashrc="${HOME}/.bashrc"
+    local start_marker="## --> Added by CADmesh installation script"
+    local end_marker="## <-- Added by CADmesh installation script"
+
+    log "Updating ${bashrc} with managed CADMesh environment block."
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log "Dry run: would update ${bashrc} to source ${CADMESH_ENV_FILE}"
+        return
+    fi
+
+    touch "$bashrc"
+    remove_marker_block "$bashrc" "$start_marker" "$end_marker"
+
+    {
+        printf '\n%s\n' "$start_marker"
+        printf 'source %q\n' "$CADMESH_ENV_FILE"
+        printf '%s\n' "$end_marker"
+    } >>"$bashrc"
+}
+
+build_cadmesh() {
+    log "Installing CADMesh against Geant4 CMake dir: ${GEANT4_CMAKE_DIR}"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        return
+    fi
+
+    mkdir -p "$BASE_DIR"
+    remove_generated_path "$CADMESH_SOURCE_DIR"
+    remove_generated_path "$CADMESH_BUILD_DIR"
+    remove_generated_path "$CADMESH_INSTALL_DIR"
+    mkdir -p "$CADMESH_BUILD_DIR" "$CADMESH_INSTALL_DIR"
+
+    git clone --depth 1 "$CADMESH_REPO_URL" "$CADMESH_SOURCE_DIR"
+
+    (
+        cd "$CADMESH_BUILD_DIR"
+        "$CMAKE_PATH" \
+            -DCMAKE_INSTALL_PREFIX="${CADMESH_INSTALL_DIR}" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DGeant4_DIR="${GEANT4_CMAKE_DIR}" \
+            "$CADMESH_SOURCE_DIR"
+        env G4VERBOSE=1 make -j"${JOBS}"
+        make install
+    )
+}
+
+main() {
+    parse_args "$@"
+    detect_jobs
+    configure_paths
+    print_configuration
+    check_prerequisites
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_dry_run_plan
+        log "Dry run complete."
+        return
+    fi
+
+    build_cadmesh
+    write_cadmesh_environment
+    update_shell_rc
+    log "Done."
+}
+
+main "$@"

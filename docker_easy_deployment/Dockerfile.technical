@@ -1,15 +1,60 @@
-FROM ubuntu:bionic
+FROM ubuntu:22.04
 
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install python -y
-RUN apt-get install python3-pip -y
-RUN apt-get install python-pip -y
-RUN pip install numpy
-RUN pip3 install numpy
-RUN apt-get install git curl wget build-essential uuid-runtime uuid-dev libuuid1 qt4-qmake libeigen3-dev libboost-filesystem-dev libmotif-dev libxmu-dev libexpat1-dev qt4-default qtcreator cmake-qt-gui gcc g++ gfortran zlib1g-dev libxerces-c-dev libx11-dev -y
-COPY ./interface/installation_script_Ubuntu_Full_geant4_multithreaded_10.7.bash /installation_script_Ubuntu_Full_geant4_multithreaded_10.7.bash
-RUN bash installation_script_Ubuntu_Full_geant4_multithreaded_10.7.bash
-COPY ./interface/installation_script_linux_only_CADmesh.bash /installation_script_linux_only_CADmesh.bash
-RUN bash installation_script_linux_only_CADmesh.bash
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+WORKDIR /
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        wget \
+        tar \
+        gzip \
+        make \
+        cmake \
+        build-essential \
+        gcc \
+        g++ \
+        gfortran \
+        zlib1g-dev \
+        libxerces-c-dev \
+        libx11-dev \
+        libexpat1-dev \
+        libxmu-dev \
+        libmotif-dev \
+        libboost-filesystem-dev \
+        libeigen3-dev \
+        libuuid1 \
+        uuid-dev \
+        uuid-runtime \
+        qtcreator \
+        qtbase5-dev \
+        cmake-qt-gui \
+        python3 \
+        python3-pip \
+        python3-numpy \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY installation_script_Ubuntu_FullGeant4_10_7_multithreaded.bash /usr/local/bin/install-geant4.bash
+RUN chmod +x /usr/local/bin/install-geant4.bash \
+    && /usr/local/bin/install-geant4.bash \
+        --expect-ubuntu 22.04 \
+        --work-dir /geant4 \
+        --skip-deps \
+        --no-update-shell-rc \
+        --clean
+
+COPY docker_easy_deployment/interface/installation_script_linux_only_CADmesh.bash /usr/local/bin/install-cadmesh.bash
+RUN chmod +x /usr/local/bin/install-cadmesh.bash \
+    && /usr/local/bin/install-cadmesh.bash --no-update-shell-rc \
+    && printf '%s\n' \
+        'source /geant4/geant4_10_7_env.sh' \
+        'source /geant4/cadmesh_env.sh' \
+        > /geant4/docker_env.sh
+
+ENV BASH_ENV=/geant4/docker_env.sh
+WORKDIR /work

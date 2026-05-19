@@ -1,13 +1,21 @@
-Using Docker, deploy the GEANT4 code rapidly on any computer (Linux, Mac Windows) and run simulations.
+Using Docker, deploy Geant4 rapidly on Linux, macOS, or Windows and run the default example simulation.
 
-Requires `docker` and `docker-compose` installed.
+Requirements:
+- Docker with the modern Compose plugin.
 
-Commands to run :
-* `docker-compose build`
-* `docker-compose up`
+Commands:
 
-The folders `interface` and `output` are in common between this computer and the Docker Virtual Machine. `interface` is used for the installation process. Output files produced by GEANT4 are written in the `output` folder.
+```bash
+docker compose build
+docker compose up
+```
 
-Will grab an Ubuntu 18.04 image, install updates, required packages, download compile and install Geant4 and dependencies. Will then compile and run the Geant4 project.
+The image is based on Ubuntu 22.04 and builds Geant4 10.7.4, Xerces-C 3.2.2, and CADMesh during `docker compose build`.
 
-Modify the bash command and the end of the file `docker-compose.yml` to adapt it to another Geant4 code.
+Shared folders:
+- `interface/` is mounted read-only at `/interface` for user scripts and future customization.
+- `output/` is mounted at `/work/output` for simulation output.
+
+The default `docker-compose.yml` command clones and runs `COSMIC_RAY_THUNDERSTORM-Geant4`. Edit that command to build and run a different Geant4 project.
+
+The old Docker-specific Geant4 installer was moved to `OLD/`; Docker now uses the repository's unified Ubuntu Geant4 installer.

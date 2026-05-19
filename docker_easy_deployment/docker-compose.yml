@@ -1,29 +1,26 @@
----
-version: '3'
 services:
-  GEANT4:
-    image: ubuntu:bionic
+  geant4:
+    image: geant4-easy:10.7
     build:
-      context: .
-      dockerfile: "./Dockerfile.technical"
-    restart: 'no'
-    container_name: GEANT4
+      context: ..
+      dockerfile: docker_easy_deployment/Dockerfile.technical
+    restart: "no"
+    container_name: geant4
     volumes:
-      - "./interface:/interface"
-      - "./output:/cluster/work/users/dsarria/SIMULATION_DATAFILES/COSMIC_THUNDER"
+      - "./interface:/interface:ro"
+      - "./output:/work/output"
     ports:
       - "127.0.0.10:8080:8080"
-    # Default command used when running `docker compose up`
     command: >
-      bash -c "
-      source /geant4/geant4_install_10.07.p03/bin/geant4.sh
-      && mkdir -p /cluster/work/users/dsarria/SIMULATION_DATAFILES/COSMIC_THUNDER
-      && rm -rf COSMIC_RAY_THUNDERSTORM-Geant4 || true
-      && git clone https://github.com/davsar89/COSMIC_RAY_THUNDERSTORM-Geant4.git || true
-      && cd COSMIC_RAY_THUNDERSTORM-Geant4/build
-      && cmake ../
-      && make -j4
+      bash -lc "
+      set -e
+      && source /geant4/docker_env.sh
+      && mkdir -p /work/output /cluster/work/users/dsarria/SIMULATION_DATAFILES
+      && ln -sfn /work/output /cluster/work/users/dsarria/SIMULATION_DATAFILES/COSMIC_THUNDER
+      && rm -rf /work/COSMIC_RAY_THUNDERSTORM-Geant4
+      && git clone https://github.com/davsar89/COSMIC_RAY_THUNDERSTORM-Geant4.git /work/COSMIC_RAY_THUNDERSTORM-Geant4
+      && cmake -S /work/COSMIC_RAY_THUNDERSTORM-Geant4 -B /work/COSMIC_RAY_THUNDERSTORM-Geant4/build
+      && cmake --build /work/COSMIC_RAY_THUNDERSTORM-Geant4/build --parallel 4
+      && cd /work/COSMIC_RAY_THUNDERSTORM-Geant4/build
       && python3 python_job_local.py
       "
-      
-
